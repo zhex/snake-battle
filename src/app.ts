@@ -1,27 +1,20 @@
 /// <reference path="../node_modules/phaser/typescript/phaser.d.ts" />
 
-import { Game, AUTO } from 'phaser';
+import './load-resource';
+import { Game, AUTO, TileSprite } from 'phaser';
+import ArenaState from './states/arena';
 
 class SnakeGame {
 	private game: Game;
 
 	constructor() {
-		this.game = new Game(
-			document.body.clientWidth, 
-			document.body.clientHeight, 
-			AUTO, 
-			'content',
-			{ preload: this.preload, create: this.create }
-		);
+		this.game = new Game(window.innerWidth, window.innerHeight, AUTO, 'content');
+		this.game.state.add('arena', new ArenaState(this.game));
 	}
 
-	preload() {
-
-	}
-
-	create() {
-		
+	start() {
+		this.game.state.start('arena');
 	}
 }
 
-new SnakeGame();
+new SnakeGame().start();

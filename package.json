@@ -2,11 +2,17 @@
   "name": "snake-battle",
   "description": "h5 game for snake battle clone",
   "version": "1.0.0",
+  "scripts": {
+  	"start": "rm -rf dist && webpack -w"
+	},
   "dependencies": {
     "phaser": "^2.6.2"
   },
   "devDependencies": {
-    "typescript-loader": "^1.1.3",
+    "awesome-typescript-loader": "^2.2.4",
+    "copy-webpack-plugin": "^3.0.1",
+    "image-webpack-loader": "^2.0.0",
+    "typescript": "^2.0.3",
     "webpack": "^1.13.2"
   }
 }
