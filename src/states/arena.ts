@@ -5,6 +5,9 @@ export default class ArenaState {
 	private bgTile: TileSprite;
 	private cursors: CursorKeys;
 	private player: Group;
+	private movePath = [];
+	private spacer = 8;
+	private speed = 150;
 	private spacebar: Keyboard;
 
 	constructor(game: Game) {
@@ -13,7 +16,7 @@ export default class ArenaState {
 
 	preload() {
 		this.game.load.image('bgtile', 'bg.png');
-		this.game.load.image('player');
+		this.game.load.image('player', 'player.png');
 	}
 
 	create() {
@@ -27,45 +30,70 @@ export default class ArenaState {
 		this.spacebar = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
 		this.player = this.game.add.group();
-
-		for (var i = 0; i < 140; i++) {
-			let p = this.player.create(world.centerX + i * 50, world.centerY, 'player');
+		for (let i = 0; i < 50; i++) {
+			let p: Sprite = this.player.create(world.centerX, world.centerY, 'player');
 			p.anchor.setTo(.5, .5);
+			p.angle = 180;
+			p.scale.setTo(.5, .5);
+			p.outOfBoundsKill = true;
+			p.checkWorldBounds = true;
 			physics.arcade.enable(p);
 		}
-		camera.follow(this.player.getChildAt(0));
 
+		let head = this.player.getChildAt(0);
+
+		for(let i=0; i < this.player.length * this.spacer; i++) {
+			this.movePath.push({x: world.centerX, y:world.centerY,});
+		}
+
+		camera.follow(head);
 	}
 
 	update() {
-		let speed = 150;
-		let prevSprite: Sprite;
-		
-		this.player.forEach(p => {
-			if (!prevSprite) {
-				if (this.cursors.up.isDown && this.cursors.right.isDown) {
-					p.angle = -45;
-				} else if (this.cursors.up.isDown && this.cursors.left.isDown) {
-					p.angle = 225;
-				} else if (this.cursors.down.isDown && this.cursors.left.isDown) {
-					p.angle = 135;
-				} else if (this.cursors.down.isDown && this.cursors.right.isDown) {
-					p.angle = 45;
-				} else if (this.cursors.up.isDown) {
-					p.angle = -90;
-				} else if (this.cursors.down.isDown) {
-					p.angle = 90;
-				} else if (this.cursors.left.isDown) {
-					p.angle = 180;
-				} else if (this.cursors.right.isDown) {
-					p.angle = 0;
-				}
-			} else {
-				p.rotation = this.game.physics.arcade.angleBetween(p, prevSprite);
-			}
-			if (this.spacebar.isDown) speed = 500;
-			this.game.physics.arcade.velocityFromRotation(p.rotation, speed, p.body.velocity);
-			prevSprite = p;
-		});
+		let head = this.player.getChildAt(0);
+
+		let angle = this.getMoveAngle();
+		if (angle != null) head.angle = angle;
+
+		if (this.spacebar.isDown) {
+			this.speed = 300;
+		} else {
+			this.speed = 150;
+		}
+		this.game.physics.arcade.velocityFromRotation(head.rotation, this.speed, head.body.velocity);
+
+		let part = this.movePath.pop();
+		part.x = head.x;
+		part.y = head.y;
+		this.movePath.unshift(part);
+
+		for (let i = 1; i < this.player.length; i++) {
+			let { x, y } = this.movePath[i * this.spacer];
+			let p = this.player.getChildAt(i);
+			p.x = x;
+			p.y = y;
+		}
+	}
+
+	private getMoveAngle() {
+		let angle = null;
+		if (this.cursors.up.isDown && this.cursors.right.isDown) {
+			angle = 315;
+		} else if (this.cursors.up.isDown && this.cursors.left.isDown) {
+			angle = 225;
+		} else if (this.cursors.down.isDown && this.cursors.left.isDown) {
+			angle = 135;
+		} else if (this.cursors.down.isDown && this.cursors.right.isDown) {
+			angle = 45;
+		} else if (this.cursors.up.isDown) {
+			angle = 270;
+		} else if (this.cursors.down.isDown) {
+			angle = 90;
+		} else if (this.cursors.left.isDown) {
+			angle = 180;
+		} else if (this.cursors.right.isDown) {
+			angle = 0;
+		}
+		return angle;
 	}
 }
