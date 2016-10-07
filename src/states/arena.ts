@@ -1,4 +1,4 @@
-import { Game, TileSprite, CursorKeys, Sprite, Group, Keyboard } from 'phaser';
+import { Game, TileSprite, CursorKeys, Sprite, Group, Keyboard, Graphics } from 'phaser';
 
 export default class ArenaState {
 	private game: Game;
@@ -9,6 +9,7 @@ export default class ArenaState {
 	private spacer = 8;
 	private speed = 150;
 	private spacebar: Keyboard;
+	private points: Group;
 
 	constructor(game: Game) {
 		this.game = game;
@@ -17,42 +18,52 @@ export default class ArenaState {
 	preload() {
 		this.game.load.image('bgtile', 'bg.png');
 		this.game.load.image('player', 'player.png');
+		this.game.load.image('dot', 'diamond.png');
 	}
 
 	create() {
 		let { world, physics, camera } = this.game;
 
 		world.setBounds(0, 0, 3840, 3840);
-		physics.startSystem(Phaser.Physics.ARCADE);
+		physics.arcade.setBounds(500, 500, 3340, 3340);
+		// physics.startSystem(Phaser.Physics.ARCADE);
 
-		this.bgTile = this.game.add.tileSprite(500, 500, 2840, 2840, 'bgtile');
+		this.bgTile = this.game.add.tileSprite(500, 500, 3340, 3340, 'bgtile');
 		this.cursors = this.game.input.keyboard.createCursorKeys();
 		this.spacebar = this.game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
 		this.player = this.game.add.group();
-		for (let i = 0; i < 50; i++) {
+		this.player.enableBody = true;
+		for (let i = 0; i < 5; i++) {
 			let p: Sprite = this.player.create(world.centerX, world.centerY, 'player');
 			p.anchor.setTo(.5, .5);
 			p.angle = 180;
 			p.scale.setTo(.5, .5);
-			p.outOfBoundsKill = true;
-			p.checkWorldBounds = true;
-			physics.arcade.enable(p);
+			p.body.collideWorldBounds = true;
 		}
 
 		let head = this.player.getChildAt(0);
 
-		for(let i=0; i < this.player.length * this.spacer; i++) {
-			this.movePath.push({x: world.centerX, y:world.centerY,});
+		for (let i = 0; i < this.player.length * this.spacer; i++) {
+			this.movePath.push({ x: world.centerX, y: world.centerY });
 		}
 
 		camera.follow(head);
+
+		this.points = this.game.add.group();
+		this.points.enableBody = true;
+		for (let i = 0; i < 500; i++) {
+			this.points.create(Math.random() * world.width, Math.random() * world.height, 'dot');
+		}
 	}
 
 	update() {
-		let head = this.player.getChildAt(0);
+		const { physics } this.game;
+		let head: Sprite = this.player.getChildAt(0);
 
-		let angle = this.getMoveAngle();
+		physics.arcade.overlap(head, this.points, this.collectPoint, null, this);
+
+		let angle: number = this.getMoveAngle();
 		if (angle != null) head.angle = angle;
 
 		if (this.spacebar.isDown) {
@@ -60,7 +71,7 @@ export default class ArenaState {
 		} else {
 			this.speed = 150;
 		}
-		this.game.physics.arcade.velocityFromRotation(head.rotation, this.speed, head.body.velocity);
+		physics.arcade.velocityFromRotation(head.rotation, this.speed, head.body.velocity);
 
 		let part = this.movePath.pop();
 		part.x = head.x;
@@ -95,5 +106,19 @@ export default class ArenaState {
 			angle = 0;
 		}
 		return angle;
+	}
+
+	private collectPoint(head: Sprite, point: Sprite) {
+		point.kill();
+		
+		let last: Sprite = this.player.getChildAt(this.player.length - 1);
+		let newBody: Sprite = this.player.create(last.x, last.y, 'player');
+		newBody.anchor.setTo(.5, .5);
+		newBody.scale.setTo(.5, .5);
+		newBody.body.collideWorldBounds = true;
+
+		for (let i = 0; i < this.spacer; i++) {
+			this.movePath.push({ x: last.x, y: last.y });
+		}
 	}
 }
